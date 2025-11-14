@@ -95,28 +95,21 @@ const currentPubIndex = pubsList.findIndex(p => p.id === currentPubId);
         
         {pubsList.length > 0 ? (
           <>
-            <div class="flex items-center justify-between gap-1 mb-6 overflow-x-auto pb-2">
+            <div class="flex items-center justify-center gap-2 mb-6 flex-wrap">
               {pubsList.map((pub, index) => (
-                <div class="flex items-center flex-shrink-0">
-                  <button 
-                    class="pub-progress-item text-center cursor-pointer hover:scale-105 transition-transform"
-                    data-pub-id={pub.id}
-                    data-pub-name={pub.name}
-                    data-pub-challenge={pub.challenge}
-                    data-pub-drink={pub.drink}
-                    data-pub-par={pub.par}
-                  >
-                    <div class={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-white font-bold text-sm mb-1 ${
+                <div class="flex items-center">
+                  <div class="text-center">
+                    <div class={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm mb-1 ${
                       index <= currentPubIndex ? 'bg-amber' : 'bg-gray-400'
                     }`}>
                       {index + 1}
                     </div>
-                    <span class="text-xs block max-w-[70px] md:max-w-[90px] leading-tight" class:list={{
+                    <span class="text-xs max-w-[60px] block truncate" class:list={{
                       'text-amber font-semibold': index === currentPubIndex
-                    }}>{pub.name}</span>
-                  </button>
+                    }}>{pub.name.split(' ')[0]}</span>
+                  </div>
                   {index < pubsList.length - 1 && (
-                    <div class={`w-2 md:w-4 h-0.5 mx-0.5 md:mx-1 flex-shrink-0 ${index < currentPubIndex ? 'bg-amber' : 'bg-gray-300'}`}></div>
+                    <div class={`w-4 h-0.5 mx-1 ${index < currentPubIndex ? 'bg-amber' : 'bg-gray-300'}`}></div>
                   )}
                 </div>
               ))}
@@ -136,30 +129,6 @@ const currentPubIndex = pubsList.findIndex(p => p.id === currentPubId);
         )}
       </GlassCard>
     </section>
-
-    <!-- Pub Challenge Dialog -->
-    <div id="pub-dialog" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div class="glass-dark max-w-md w-full p-6 rounded-2xl text-white">
-        <h3 id="dialog-pub-name" class="font-display text-2xl font-bold mb-4 text-amber"></h3>
-        <div class="space-y-3">
-          <div>
-            <span class="text-amber font-semibold">Challenge:</span>
-            <p id="dialog-challenge" class="text-white/90"></p>
-          </div>
-          <div>
-            <span class="text-amber font-semibold">Drink:</span>
-            <p id="dialog-drink" class="text-white/90"></p>
-          </div>
-          <div>
-            <span class="text-amber font-semibold">Par:</span>
-            <p id="dialog-par" class="text-white/90"></p>
-          </div>
-        </div>
-        <button class="mt-6 w-full bg-amber hover:bg-amber/80 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
-          Close
-        </button>
-      </div>
-    </div>
 
     <!-- Leaderboard -->
     <section class="mb-8">
@@ -255,37 +224,6 @@ const currentPubIndex = pubsList.findIndex(p => p.id === currentPubId);
       window.addEventListener('beforeunload', () => {
         if (channel) {
           channel.unsubscribe();
-        }
-      });
-
-      // Pub progress dialog functionality
-      const dialog = document.getElementById('pub-dialog');
-      const dialogName = document.getElementById('dialog-pub-name');
-      const dialogChallenge = document.getElementById('dialog-challenge');
-      const dialogDrink = document.getElementById('dialog-drink');
-      const dialogPar = document.getElementById('dialog-par');
-      
-      // Add click handlers to pub progress items
-      document.querySelectorAll('.pub-progress-item').forEach(item => {
-        item.addEventListener('click', () => {
-          const name = item.dataset.pubName;
-          const challenge = item.dataset.pubChallenge;
-          const drink = item.dataset.pubDrink;
-          const par = item.dataset.pubPar;
-          
-          dialogName.textContent = name;
-          dialogChallenge.textContent = challenge;
-          dialogDrink.textContent = drink;
-          dialogPar.textContent = par;
-          
-          dialog.classList.remove('hidden');
-        });
-      });
-      
-      // Close dialog on background click or close button
-      dialog.addEventListener('click', (e) => {
-        if (e.target === dialog || e.target.tagName === 'BUTTON') {
-          dialog.classList.add('hidden');
         }
       });
     });
