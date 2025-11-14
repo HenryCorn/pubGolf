@@ -98,7 +98,10 @@ const currentPubIndex = pubsList.findIndex(p => p.id === currentPubId);
             <div class="flex items-center justify-center gap-2 mb-6 flex-wrap">
               {pubsList.map((pub, index) => (
                 <div class="flex items-center">
-                  <div class="text-center">
+                  <button 
+                    class="pub-progress-btn text-center cursor-pointer hover:scale-105 transition-transform"
+                    data-pub-index={index}
+                  >
                     <div class={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm mb-1 ${
                       index <= currentPubIndex ? 'bg-amber' : 'bg-gray-400'
                     }`}>
@@ -107,7 +110,7 @@ const currentPubIndex = pubsList.findIndex(p => p.id === currentPubId);
                     <span class="text-xs max-w-[60px] block truncate" class:list={{
                       'text-amber font-semibold': index === currentPubIndex
                     }}>{pub.name.split(' ')[0]}</span>
-                  </div>
+                  </button>
                   {index < pubsList.length - 1 && (
                     <div class={`w-4 h-0.5 mx-1 ${index < currentPubIndex ? 'bg-amber' : 'bg-gray-300'}`}></div>
                   )}
@@ -181,14 +184,15 @@ const currentPubIndex = pubsList.findIndex(p => p.id === currentPubId);
     <!-- Tournament Rules -->
     <section class="mb-8">
       <GlassCard>
-        <h3 class="font-display text-2xl font-bold mb-4">Tournament Rules</h3>
+        <h3 class="font-display text-2xl font-bold mb-4">General Rules</h3>
         <div class="grid md:grid-cols-2 gap-6">
           <div>
             <h4 class="font-semibold text-amber mb-2">Basic Rules</h4>
             <ul class="text-sm space-y-1 text-gray-700">
               <li>• Say thanks when served (+1 penalty if not)</li>
-              <li>• Don't spill your drink (+1 penalty/spill)</li>
-              <li>• Don't get tagged (first 3 pubs) - 1 shot</li>
+              <li>• Don't spill your drink (+1 penalty per spill)</li>
+              <li>• Don't get tagged (first 3 pubs only) → 1 shot</li>
+              <li>• A secret token will be passed between pubs</li>
               <li>• Don't trip (+1 penalty)</li>
               <li>• Remember golfer names (+1 penalty if not)</li>
             </ul>
@@ -208,9 +212,169 @@ const currentPubIndex = pubsList.findIndex(p => p.id === currentPubId);
     </section>
   </main>
 
+  <!-- Challenge Details Dialog -->
+  <div id="challenge-dialog" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" style="backdrop-filter: blur(4px);">
+    <div class="glass-dark max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6 rounded-2xl text-white">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <h3 id="dialog-pub-name" class="font-display text-2xl font-bold text-amber mb-1"></h3>
+          <p id="dialog-challenge-name" class="text-lg text-white/90 mb-2"></p>
+        </div>
+        <button id="close-dialog" class="text-white/70 hover:text-white text-3xl leading-none">&times;</button>
+      </div>
+      
+      <div class="space-y-4">
+        <div class="bg-white/10 rounded-lg p-4">
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span class="text-amber font-semibold">Drink:</span>
+              <p id="dialog-drink" class="text-white/90"></p>
+            </div>
+            <div>
+              <span class="text-amber font-semibold">Par:</span>
+              <p id="dialog-par" class="text-white/90"></p>
+            </div>
+          </div>
+        </div>
+        
+        <div id="dialog-details" class="prose prose-invert prose-sm max-w-none">
+          <!-- Challenge details will be inserted here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Initialize realtime updates
     import { initializeRealtime, showRealtimeNotification } from '../lib/realtime';
+    
+    // Challenge details for each pub
+    const challengeDetails = [
+      {
+        name: "SECRET SANTA",
+        details: `<div class="space-y-3">
+          <p><strong>Requirements:</strong> Vinted / Aliexpress / eBay / Amazon</p>
+          <p><strong>£5 limit</strong> - Phones swapped to buy gifts</p>
+          <p>Referee chooses winners/losers</p>
+          <div class="bg-green-900/30 p-3 rounded mt-2">
+            <p class="font-semibold text-green-400 mb-1">Bonuses:</p>
+            <ul class="text-sm space-y-1">
+              <li>• +2 bonus – winner</li>
+              <li>• +1 bonus – runner up</li>
+            </ul>
+          </div>
+          <div class="bg-red-900/30 p-3 rounded">
+            <p class="font-semibold text-red-400 mb-1">Penalties:</p>
+            <ul class="text-sm space-y-1">
+              <li>• +1 penalty – second to last</li>
+              <li>• +2 penalty – last place</li>
+            </ul>
+          </div>
+        </div>`
+      },
+      {
+        name: "SPLIT THE G",
+        details: `<div class="space-y-3">
+          <p><strong>+1 penalty if you don't know the game</strong></p>
+          <div class="bg-green-900/30 p-3 rounded mt-2">
+            <p class="font-semibold text-green-400 mb-1">Bonuses:</p>
+            <ul class="text-sm space-y-1">
+              <li>• +3 bonus – winner</li>
+              <li>• +2 bonus – runner up</li>
+            </ul>
+          </div>
+          <div class="bg-red-900/30 p-3 rounded">
+            <p class="font-semibold text-red-400 mb-1">Penalties:</p>
+            <ul class="text-sm space-y-1">
+              <li>• +2 penalty – second to last</li>
+              <li>• +3 penalty – last place</li>
+            </ul>
+          </div>
+        </div>`
+      },
+      {
+        name: "SPOTIFY WRAPPED",
+        details: `<div class="space-y-3">
+          <p>Write your top 5 expected artists of the year</p>
+          <div class="bg-red-900/30 p-3 rounded mt-2">
+            <p class="font-semibold text-red-400 mb-1">Penalties:</p>
+            <ul class="text-sm space-y-1">
+              <li>• 1 penalty per match with another golfer</li>
+              <li>• If 3 or more matches: take a shot</li>
+            </ul>
+          </div>
+        </div>`
+      },
+      {
+        name: "IS IT SAFE WITH ALCOHOL?",
+        details: `<div class="space-y-3">
+          <p>Guess if a drug is compatible with alcohol</p>
+          <p><strong>2 questions per person</strong></p>
+          <div class="bg-red-900/30 p-3 rounded mt-2">
+            <p class="font-semibold text-red-400 mb-1">Penalty:</p>
+            <ul class="text-sm space-y-1">
+              <li>• 1 penalty per wrong answer</li>
+            </ul>
+          </div>
+        </div>`
+      },
+      {
+        name: "IS IT A LATIN AMERICA XMAS TRADITION?",
+        details: `<div class="space-y-3">
+          <p>Guess if something is a real Latin American Xmas tradition</p>
+          <p><strong>2 questions per person</strong></p>
+          <div class="bg-red-900/30 p-3 rounded mt-2">
+            <p class="font-semibold text-red-400 mb-1">Penalties:</p>
+            <ul class="text-sm space-y-1">
+              <li>• 1 penalty per wrong answer</li>
+              <li>• If both answers wrong → take a shot</li>
+            </ul>
+          </div>
+          <div class="bg-green-900/30 p-3 rounded">
+            <p class="font-semibold text-green-400 mb-1">Bonus:</p>
+            <ul class="text-sm space-y-1">
+              <li>• If both right → send a shot to someone</li>
+            </ul>
+          </div>
+        </div>`
+      },
+      {
+        name: "12(/4) SHOTS OF XMAS",
+        details: `<div class="space-y-3">
+          <p><strong>Each golfer gets 3 shots:</strong></p>
+          <ul class="text-sm space-y-2 mt-2">
+            <li>• One for yourself</li>
+            <li>• One for the person above you in ranking</li>
+            <li>• One for the person below you in ranking</li>
+          </ul>
+          <p class="mt-3 text-sm text-white/70">If tie → sender chooses</p>
+        </div>`
+      },
+      {
+        name: "BOXING DAY (PUB)",
+        details: `<div class="space-y-3">
+          <ol class="text-sm space-y-2">
+            <li>1. Down your drink</li>
+            <li>2. Draw a character chosen by referee</li>
+            <li>3. Top half gets 25 seconds</li>
+            <li>4. Bottom half gets 50 seconds</li>
+            <li>5. Referee judges drawings</li>
+          </ol>
+          <div class="bg-green-900/30 p-3 rounded mt-2">
+            <p class="font-semibold text-green-400 mb-1">Bonus:</p>
+            <ul class="text-sm space-y-1">
+              <li>• +4 bonus – best drawing</li>
+            </ul>
+          </div>
+          <div class="bg-red-900/30 p-3 rounded">
+            <p class="font-semibold text-red-400 mb-1">Penalty:</p>
+            <ul class="text-sm space-y-1">
+              <li>• +4 penalty – worst drawing</li>
+            </ul>
+          </div>
+        </div>`
+      }
+    ];
     
     document.addEventListener('DOMContentLoaded', () => {
       // Setup realtime subscription
@@ -226,8 +390,49 @@ const currentPubIndex = pubsList.findIndex(p => p.id === currentPubId);
           channel.unsubscribe();
         }
       });
+
+      // Challenge dialog functionality
+      const dialog = document.getElementById('challenge-dialog');
+      const dialogPubName = document.getElementById('dialog-pub-name');
+      const dialogChallengeName = document.getElementById('dialog-challenge-name');
+      const dialogDrink = document.getElementById('dialog-drink');
+      const dialogPar = document.getElementById('dialog-par');
+      const dialogDetails = document.getElementById('dialog-details');
+      const closeBtn = document.getElementById('close-dialog');
+
+      // Get pub data from the page
+      const pubData = JSON.parse(document.getElementById('pub-data')?.textContent || '[]');
+
+      // Add click handlers to pub progress buttons
+      document.querySelectorAll('.pub-progress-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const index = parseInt(btn.dataset.pubIndex);
+          const pub = pubData[index];
+          const challenge = challengeDetails[index];
+
+          if (pub && challenge) {
+            dialogPubName.textContent = pub.name;
+            dialogChallengeName.textContent = challenge.name;
+            dialogDrink.textContent = pub.drink;
+            dialogPar.textContent = pub.par;
+            dialogDetails.innerHTML = challenge.details;
+            
+            dialog.classList.remove('hidden');
+          }
+        });
+      });
+
+      // Close dialog handlers
+      closeBtn?.addEventListener('click', () => dialog.classList.add('hidden'));
+      dialog?.addEventListener('click', (e) => {
+        if (e.target === dialog) dialog.classList.add('hidden');
+      });
     });
   </script>
+
+  <!-- Pub data for JavaScript -->
+  <script id="pub-data" type="application/json" set:html={JSON.stringify(pubsList)} />
+
 </BaseLayout>
 
 <style>
