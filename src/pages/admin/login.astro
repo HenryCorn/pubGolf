@@ -1,0 +1,79 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import GlassCard from '../../components/GlassCard.astro';
+import GlassInput from '../../components/GlassInput.astro';
+import GlassButton from '../../components/GlassButton.astro';
+---
+
+<BaseLayout title="Admin Login - PUB GOLF VOL.4 - THE XMAS ONE">
+  <div class="min-h-screen bg-gradient-to-br from-forest to-green-800 flex items-center justify-center p-4">
+    <GlassCard dark={true} class="max-w-md w-full">
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 bg-amber rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 1L9 9l-8 .5a1 1 0 0 0-.5 1.7l6 5.5-2 8.5a1 1 0 0 0 1.5 1.1L12 21l5.5 3.6a1 1 0 0 0 1.5-1.1l-2-8.5 6-5.5a1 1 0 0 0-.5-1.7l-8-.5L12 1z"/>
+          </svg>
+        </div>
+        <h2 class="font-display text-2xl font-bold mb-2 text-white">Referee Access</h2>
+        <p class="text-gray-300 text-sm">Enter the tournament password to access the admin dashboard</p>
+      </div>
+      
+      <form id="login-form" action="/api/admin/login" method="POST" class="space-y-4">
+        <div>
+          <GlassInput 
+            type="password" 
+            name="password" 
+            placeholder="Enter password..." 
+            required={true}
+          />
+        </div>
+        <GlassButton type="submit" variant="primary" class="w-full">
+          Access Dashboard
+        </GlassButton>
+      </form>
+      
+      <div id="error-message" class="mt-4 text-red-400 text-sm text-center hidden">
+        Incorrect password. Please try again.
+      </div>
+    </GlassCard>
+  </div>
+
+  <script>
+    document.getElementById('login-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target as HTMLFormElement;
+      const formData = new FormData(form);
+      
+      try {
+        const response = await fetch('/api/admin/login', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (response.ok) {
+          window.location.href = '/admin';
+        } else {
+          const errorMsg = document.getElementById('error-message');
+          if (errorMsg) {
+            errorMsg.classList.remove('hidden');
+            if (window.anime) {
+              window.anime({
+                targets: errorMsg,
+                scale: [0.8, 1],
+                duration: 300,
+                easing: 'easeOutQuart'
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        const errorMsg = document.getElementById('error-message');
+        if (errorMsg) {
+          errorMsg.textContent = 'An error occurred. Please try again.';
+          errorMsg.classList.remove('hidden');
+        }
+      }
+    });
+  </script>
+</BaseLayout>

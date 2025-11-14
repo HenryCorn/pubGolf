@@ -1,0 +1,50 @@
+---
+interface Props {
+  type?: 'text' | 'password' | 'number';
+  name: string;
+  placeholder?: string;
+  value?: string | number;
+  required?: boolean;
+  min?: number;
+  max?: number;
+  class?: string;
+}
+
+const { 
+  type = 'text',
+  name,
+  placeholder = '',
+  value,
+  required = false,
+  min,
+  max,
+  class: className = ''
+} = Astro.props;
+---
+
+<input 
+  type={type}
+  name={name}
+  placeholder={placeholder}
+  value={value}
+  required={required}
+  min={min}
+  max={max}
+  class={`form-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400 ${className}`}
+/>
+
+<style>
+  .form-input {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+  }
+  
+  .form-input:focus {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: #F77F00;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(247, 127, 0, 0.1);
+  }
+</style>

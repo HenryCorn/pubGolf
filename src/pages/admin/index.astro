@@ -1,0 +1,531 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import GlassCard from '../../components/GlassCard.astro';
+import GlassButton from '../../components/GlassButton.astro';
+import { supabase } from '../../lib/supabase';
+import { calculateHoleScore, sortPlayersByScore } from '../../utils/score';
+import type { PlayerWithScores } from '../../types/database';
+
+// Check authentication (in production, use proper session management)
+const authCookie = Astro.cookies.get('admin-auth');
+if (!authCookie || authCookie.value !== 'true') {
+  return Astro.redirect('/admin/login');
+}
+
+// Fetch data
+const { data: players } = await supabase.from('players').select('*').order('name');
+const { data: pubs } = await supabase.from('pubs').select('*').order('order_index');
+const { data: scores } = await supabase.from('scores').select('*');
+const { data: settings } = await supabase.from('tournament_settings').select('*').single();
+
+// Process players with scores
+const playersWithScores: PlayerWithScores[] = (players || []).map(player => {
+  const playerScores = (scores || []).filter(s => s.player_id === player.id);
+  const totalScore = playerScores.reduce((sum, score) => sum + calculateHoleScore(score), 0);
+  return { ...player, scores: playerScores, totalScore };
+});
+
+const sortedPlayers = sortPlayersByScore(playersWithScores);
+const pubsList = pubs || [];
+const currentPubId = settings?.current_pub_id || pubsList[0]?.id;
+const currentPub = pubsList.find(p => p.id === currentPubId) || pubsList[0];
+const currentPubIndex = pubsList.findIndex(p => p.id === currentPubId);
+---
+
+<BaseLayout title="Admin Dashboard - PUB GOLF VOL.4 - THE XMAS ONE">
+  <div class="min-h-screen bg-gradient-to-br from-forest to-green-800 text-white pb-24">
+    <main class="container mx-auto px-4 py-8">
+      <!-- Header -->
+      <section class="mb-8">
+        <GlassCard dark={true} class="text-center">
+          <h1 class="font-display text-3xl font-bold mb-2">Referee Dashboard</h1>
+          <p class="text-gray-300">Manage players, enter scores, and monitor the tournament in real-time</p>
+          <div class="flex items-center justify-center mt-4">
+            <div class="live-indicator w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+            <span class="text-sm">Live Updates Active</span>
+          </div>
+        </GlassCard>
+      </section>
+
+      <!-- Current Tournament Status -->
+      <section class="mb-8">
+        <GlassCard dark={true}>
+          <h2 class="font-display text-2xl font-bold mb-4">🎄 Current Tournament Status</h2>
+          <div class="grid md:grid-cols-3 gap-6 mb-6">
+            <div class="text-center">
+              <div class="text-3xl font-bold text-amber mb-1">{currentPubIndex + 1}/{pubsList.length}</div>
+              <div class="text-sm text-gray-300">Current Hole</div>
+              <div class="text-xs text-gray-400">{currentPub?.name}</div>
+            </div>
+            <div class="text-center">
+              <div class="text-3xl font-bold text-amber mb-1">{playersWithScores.length}</div>
+              <div class="text-sm text-gray-300">Active Players</div>
+              <div class="text-xs text-gray-400">All accounted for</div>
+            </div>
+            <div class="text-center">
+              <div class="text-3xl font-bold text-amber mb-1">Live</div>
+              <div class="text-sm text-gray-300">Score Entry</div>
+              <div class="text-xs text-gray-400">{currentPub?.challenge}</div>
+            </div>
+          </div>
+
+          <!-- Pub Navigation -->
+          <div class="border-t border-white/10 pt-6">
+            <h3 class="font-semibold mb-4 text-center">Change Current Pub</h3>
+            <div class="flex items-center justify-center gap-2">
+              <button 
+                id="prev-pub-btn"
+                class="glass rounded-lg px-4 py-2 hover:bg-white/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={currentPubIndex === 0}
+              >
+                ← Previous
+              </button>
+              
+              <select 
+                id="current-pub-select" 
+                class="glass rounded-lg px-4 py-2 bg-transparent text-white font-semibold min-w-[200px] text-center"
+              >
+                {pubsList.map(pub => (
+                  <option value={pub.id} selected={pub.id === currentPubId} class="bg-forest text-white">
+                    {pub.name}
+                  </option>
+                ))}
+              </select>
+              
+              <button 
+                id="next-pub-btn"
+                class="glass rounded-lg px-4 py-2 hover:bg-white/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={currentPubIndex === pubsList.length - 1}
+              >
+                Next →
+              </button>
+            </div>
+            <p class="text-center text-sm text-gray-400 mt-3">
+              Current: {currentPub?.challenge} • {currentPub?.drink} • Par {currentPub?.par}
+            </p>
+          </div>
+        </GlassCard>
+      </section>
+
+      <!-- Score Entry -->
+      <section class="mb-8">
+        <GlassCard dark={true}>
+          <h2 class="font-display text-2xl font-bold mb-6">Score Entry - {currentPub?.name}</h2>
+          
+          <div class="grid md:grid-cols-2 gap-8">
+            <!-- Player Selection -->
+            <div>
+              <h3 class="font-semibold mb-4">Select Player</h3>
+              <div id="player-list" class="space-y-2 max-h-64 overflow-y-auto">
+                {playersWithScores.map(player => (
+                  <div 
+                    class="player-select-item glass rounded-lg p-3 cursor-pointer transition-all hover:bg-white/10"
+                    data-player-id={player.id}
+                    data-player-name={player.name}
+                  >
+                    <div class="flex items-center space-x-3">
+                      <span class="text-2xl">{player.avatar}</span>
+                      <div>
+                        <div class="font-semibold">{player.name}</div>
+                        <div class="text-sm text-gray-300">Score: {player.totalScore}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <!-- Score Input -->
+            <div>
+              <h3 class="font-semibold mb-4">Enter Scores</h3>
+              <form id="score-form" class="space-y-4">
+                <input type="hidden" id="selected-player-id" name="player_id" />
+                <input type="hidden" name="pub_id" value={currentPub?.id} />
+                
+                <div>
+                  <label class="block text-sm font-medium mb-2">Sips Taken</label>
+                  <div class="grid grid-cols-5 gap-2">
+                    {[1, 2, 3, 4, 5].map(val => (
+                      <button 
+                        type="button"
+                        class="quick-score-btn glass rounded-lg py-2 text-sm font-medium hover:bg-white/20" 
+                        data-type="sips" 
+                        data-value={val}
+                      >
+                        {val === 5 ? '5+' : val}
+                      </button>
+                    ))}
+                  </div>
+                  <input type="hidden" id="sips-value" name="sips" value="0" />
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium mb-2">Penalties</label>
+                  <div class="grid grid-cols-4 gap-2">
+                    {[0, 1, 2, 3].map(val => (
+                      <button 
+                        type="button"
+                        class="quick-score-btn glass rounded-lg py-2 text-sm font-medium hover:bg-white/20" 
+                        data-type="penalties" 
+                        data-value={val}
+                      >
+                        {val === 0 ? '0' : `+${val}`}
+                      </button>
+                    ))}
+                  </div>
+                  <input type="hidden" id="penalties-value" name="penalties" value="0" />
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium mb-2">Bonuses</label>
+                  <div class="grid grid-cols-4 gap-2">
+                    {[0, 1, 2, 3].map(val => (
+                      <button 
+                        type="button"
+                        class="quick-score-btn glass rounded-lg py-2 text-sm font-medium hover:bg-white/20" 
+                        data-type="bonuses" 
+                        data-value={val}
+                      >
+                        {val === 0 ? '0' : `-${val}`}
+                      </button>
+                    ))}
+                  </div>
+                  <input type="hidden" id="bonuses-value" name="bonuses" value="0" />
+                </div>
+                
+                <div class="pt-4">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="font-medium">Current Score:</span>
+                    <span id="current-score" class="font-bold text-amber text-lg">0</span>
+                  </div>
+                  <button 
+                    type="submit" 
+                    id="submit-score-btn"
+                    disabled
+                    class="w-full px-6 py-3 rounded-lg font-semibold transition-all duration-300 bg-gradient-to-r from-amber to-gold text-white hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Submit Score
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </GlassCard>
+      </section>
+
+      <!-- Player Management -->
+      <section class="mb-8">
+        <GlassCard dark={true}>
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="font-display text-2xl font-bold">Player Management</h2>
+            <button id="add-player-btn" class="px-6 py-2 rounded-lg bg-gradient-to-r from-amber to-gold text-white font-semibold">
+              Add Player
+            </button>
+          </div>
+          
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b border-white/20">
+                  <th class="text-left py-3 px-4">Player</th>
+                  <th class="text-left py-3 px-4">Total Score</th>
+                  <th class="text-left py-3 px-4">Holes Played</th>
+                  <th class="text-left py-3 px-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedPlayers.map(player => {
+                  const scoreColor = player.totalScore < 10 ? 'text-green-400' : player.totalScore < 20 ? 'text-amber' : 'text-red-400';
+                  return (
+                    <tr class="border-b border-white/10 hover:bg-white/5 transition-colors">
+                      <td class="py-3 px-4">
+                        <div class="flex items-center space-x-3">
+                          <span class="text-lg">{player.avatar}</span>
+                          <div>
+                            <div class="font-semibold">{player.name}</div>
+                            <div class="text-xs text-gray-400">#{player.id.slice(0, 8)}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="py-3 px-4">
+                        <span class={`font-bold ${scoreColor}`}>{player.totalScore}</span>
+                      </td>
+                      <td class="py-3 px-4">{player.scores.length}/{pubsList.length}</td>
+                      <td class="py-3 px-4">
+                        <button class="delete-player-btn text-red-400 hover:text-red-300 text-sm" data-player-id={player.id}>
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </GlassCard>
+      </section>
+    </main>
+  </div>
+
+  <!-- Add Player Modal -->
+  <div id="add-player-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <GlassCard dark={true} class="max-w-md w-full mx-4">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-display text-xl font-bold text-white">Add New Player</h3>
+        <button id="close-add-player" class="text-gray-400 hover:text-white">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <form id="add-player-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-2 text-white">Player Name</label>
+          <input 
+            type="text" 
+            name="name" 
+            placeholder="Enter player name..." 
+            class="form-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400 bg-white/10 border border-white/20"
+            required
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2 text-white">Avatar Emoji</label>
+          <input 
+            type="text" 
+            name="avatar" 
+            placeholder="👨‍🎓" 
+            class="form-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400 bg-white/10 border border-white/20"
+            maxlength="2"
+          />
+        </div>
+        <button 
+          type="submit" 
+          class="w-full py-3 rounded-lg bg-gradient-to-r from-amber to-gold text-white font-semibold"
+        >
+          Add Player
+        </button>
+      </form>
+    </GlassCard>
+  </div>
+
+  <script>
+    let selectedPlayerId: string | null = null;
+    let currentScores = { sips: 0, penalties: 0, bonuses: 0 };
+    
+    // Player selection
+    document.querySelectorAll('.player-select-item').forEach(item => {
+      item.addEventListener('click', function() {
+        document.querySelectorAll('.player-select-item').forEach(i => 
+          i.classList.remove('bg-amber/20', 'border-amber')
+        );
+        this.classList.add('bg-amber/20', 'border-amber', 'border');
+        
+        selectedPlayerId = (this as HTMLElement).dataset.playerId || null;
+        (document.getElementById('selected-player-id') as HTMLInputElement).value = selectedPlayerId || '';
+        (document.getElementById('submit-score-btn') as HTMLButtonElement).disabled = false;
+      });
+    });
+    
+    // Quick score buttons
+    document.querySelectorAll('.quick-score-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const type = (this as HTMLElement).dataset.type as 'sips' | 'penalties' | 'bonuses';
+        const value = parseInt((this as HTMLElement).dataset.value || '0');
+        
+        // Remove active from siblings
+        const parent = this.parentElement;
+        parent?.querySelectorAll('.quick-score-btn').forEach(b => 
+          b.classList.remove('bg-amber', 'text-white')
+        );
+        this.classList.add('bg-amber', 'text-white');
+        
+        currentScores[type] = value;
+        (document.getElementById(`${type}-value`) as HTMLInputElement).value = value.toString();
+        updateCurrentScore();
+      });
+    });
+    
+    function updateCurrentScore() {
+      const total = currentScores.sips + currentScores.penalties - currentScores.bonuses;
+      const scoreEl = document.getElementById('current-score');
+      if (scoreEl) scoreEl.textContent = total.toString();
+    }
+    
+    // Score form submission
+    document.getElementById('score-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target as HTMLFormElement;
+      const formData = new FormData(form);
+      
+      try {
+        const response = await fetch('/api/admin/scores', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (response.ok) {
+          showNotification('Score updated successfully!', 'success');
+          setTimeout(() => window.location.reload(), 1000);
+        } else {
+          showNotification('Failed to update score', 'error');
+        }
+      } catch (error) {
+        console.error('Score submission error:', error);
+        showNotification('An error occurred', 'error');
+      }
+    });
+    
+    // Add player modal
+    document.getElementById('add-player-btn')?.addEventListener('click', () => {
+      document.getElementById('add-player-modal')?.classList.remove('hidden');
+    });
+    
+    document.getElementById('close-add-player')?.addEventListener('click', () => {
+      document.getElementById('add-player-modal')?.classList.add('hidden');
+    });
+    
+    document.getElementById('add-player-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target as HTMLFormElement;
+      const formData = new FormData(form);
+      
+      try {
+        const response = await fetch('/api/admin/players', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (response.ok) {
+          showNotification('Player added successfully!', 'success');
+          setTimeout(() => window.location.reload(), 1000);
+        } else {
+          showNotification('Failed to add player', 'error');
+        }
+      } catch (error) {
+        console.error('Add player error:', error);
+        showNotification('An error occurred', 'error');
+      }
+    });
+    
+    // Delete player
+    document.querySelectorAll('.delete-player-btn').forEach(btn => {
+      btn.addEventListener('click', async function() {
+        if (!confirm('Are you sure you want to remove this player?')) return;
+        
+        const playerId = (this as HTMLElement).dataset.playerId;
+        try {
+          const response = await fetch(`/api/admin/players/${playerId}`, {
+            method: 'DELETE'
+          });
+          
+          if (response.ok) {
+            showNotification('Player removed successfully!', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+          } else {
+            showNotification('Failed to remove player', 'error');
+          }
+        } catch (error) {
+          console.error('Delete player error:', error);
+          showNotification('An error occurred', 'error');
+        }
+      });
+    });
+
+    // Pub navigation
+    const currentPubSelect = document.getElementById('current-pub-select') as HTMLSelectElement;
+    const prevPubBtn = document.getElementById('prev-pub-btn') as HTMLButtonElement;
+    const nextPubBtn = document.getElementById('next-pub-btn') as HTMLButtonElement;
+
+    async function updateCurrentPub(pubId: string) {
+      try {
+        const response = await fetch('/api/admin/tournament-settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ current_pub_id: pubId })
+        });
+
+        if (response.ok) {
+          showNotification('Tournament location updated!', 'success');
+          setTimeout(() => window.location.reload(), 800);
+        } else {
+          showNotification('Failed to update location', 'error');
+        }
+      } catch (error) {
+        console.error('Update pub error:', error);
+        showNotification('An error occurred', 'error');
+      }
+    }
+
+    currentPubSelect?.addEventListener('change', (e) => {
+      const pubId = (e.target as HTMLSelectElement).value;
+      updateCurrentPub(pubId);
+    });
+
+    prevPubBtn?.addEventListener('click', () => {
+      const currentIndex = currentPubSelect.selectedIndex;
+      if (currentIndex > 0) {
+        currentPubSelect.selectedIndex = currentIndex - 1;
+        updateCurrentPub(currentPubSelect.value);
+      }
+    });
+
+    nextPubBtn?.addEventListener('click', () => {
+      const currentIndex = currentPubSelect.selectedIndex;
+      if (currentIndex < currentPubSelect.options.length - 1) {
+        currentPubSelect.selectedIndex = currentIndex + 1;
+        updateCurrentPub(currentPubSelect.value);
+      }
+    });
+    
+    function showNotification(message: string, type: 'success' | 'error' | 'info' = 'info') {
+      const notification = document.createElement('div');
+      const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+      
+      notification.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg z-50 shadow-lg`;
+      notification.textContent = message;
+      
+      document.body.appendChild(notification);
+      
+      if (window.anime) {
+        window.anime({
+          targets: notification,
+          translateX: [300, 0],
+          opacity: [0, 1],
+          duration: 400,
+          easing: 'easeOutQuart'
+        });
+      }
+      
+      setTimeout(() => {
+        if (window.anime) {
+          window.anime({
+            targets: notification,
+            translateX: [0, 300],
+            opacity: [1, 0],
+            duration: 400,
+            easing: 'easeInQuart',
+            complete: () => document.body.removeChild(notification)
+          });
+        } else {
+          document.body.removeChild(notification);
+        }
+      }, 3000);
+    }
+  </script>
+</BaseLayout>
+
+<style>
+  .quick-score-btn.active {
+    background: #F77F00;
+    color: white;
+  }
+  
+  .form-input:focus {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: #F77F00;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(247, 127, 0, 0.1);
+  }
+</style>

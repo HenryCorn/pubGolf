@@ -1,0 +1,204 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "Live tournament scoring for Pub Golf VOL.4 - THE XMAS ONE" } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{title}</title>
+  <meta name="description" content={description}>
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script is:inline src="https://cdn.tailwindcss.com"></script>
+  <script is:inline>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'forest': '#1B4332',
+            'amber': '#F77F00',
+            'gold': '#FFD700',
+            'cream': '#FEFAE0',
+            'charcoal': '#2D3748'
+          },
+          fontFamily: {
+            'display': ['Playfair Display', 'serif'],
+            'body': ['Inter', 'sans-serif'],
+            'mono': ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Core Libraries -->
+  <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+  <script is:inline src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  
+  <style is:global>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #FEFAE0;
+      color: #2D3748;
+      min-height: 100vh;
+    }
+    
+    .glass {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      border-radius: 1rem;
+    }
+    
+    .glass-dark {
+      background: rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 1rem;
+    }
+    
+    .gradient-bg {
+      background: linear-gradient(135deg, #1B4332 0%, #2D5A3D 50%, #1B4332 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .aurora {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, 
+        rgba(247, 127, 0, 0.1) 0%, 
+        rgba(255, 215, 0, 0.1) 25%, 
+        rgba(247, 127, 0, 0.1) 50%, 
+        rgba(255, 215, 0, 0.1) 75%, 
+        rgba(247, 127, 0, 0.1) 100%);
+      animation: aurora 8s ease-in-out infinite;
+      pointer-events: none;
+    }
+    
+    @keyframes aurora {
+      0%, 100% { transform: translateX(-50px) rotate(0deg); }
+      50% { transform: translateX(50px) rotate(2deg); }
+    }
+    
+    .floating-ball {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      opacity: 0.3;
+      animation: float 6s ease-in-out infinite;
+      pointer-events: none;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(180deg); }
+    }
+    
+    .live-indicator {
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .hero-title {
+      background: linear-gradient(135deg, #FFD700, #F77F00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-fill-color: transparent;
+    }
+    
+    .font-display {
+      font-family: 'Playfair Display', serif;
+    }
+    
+    .font-body {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    /* Ensure transitions work */
+    .transition-all {
+      transition: all 0.3s ease;
+    }
+    
+    .transition-colors {
+      transition: color 0.3s ease, background-color 0.3s ease;
+    }
+    
+    /* Score card hover effect */
+    .score-card {
+      transition: all 0.3s ease;
+    }
+    
+    .score-card:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    }
+  </style>
+</head>
+<body class="bg-cream text-charcoal font-body">
+  <slot />
+  
+  <!-- Navigation -->
+  <nav class="fixed bottom-0 left-0 right-0 glass-dark z-50">
+    <div class="flex justify-around items-center py-3 px-4">
+      <a href="/" class={`flex flex-col items-center ${Astro.url.pathname === '/' ? 'text-amber' : 'text-white/70 hover:text-amber'} transition-colors`}>
+        <div class="w-6 h-6 mb-1">
+          <svg fill="currentColor" viewBox="0 0 24 24">
+            <path d="M3 13h2v8H3zm4-6h2v14H7zm4-6h2v20h-2zm4 2h2v18h-2zm4 5h2v13h-2z"/>
+          </svg>
+        </div>
+        <span class="text-xs font-medium">Leaderboard</span>
+      </a>
+      <a href="/admin" class={`flex flex-col items-center ${Astro.url.pathname.startsWith('/admin') ? 'text-amber' : 'text-white/70 hover:text-amber'} transition-colors`}>
+        <div class="w-6 h-6 mb-1">
+          <svg fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 1L9 9l-8 .5a1 1 0 0 0-.5 1.7l6 5.5-2 8.5a1 1 0 0 0 1.5 1.1L12 21l5.5 3.6a1 1 0 0 0 1.5-1.1l-2-8.5 6-5.5a1 1 0 0 0-.5-1.7l-8-.5L12 1z"/>
+          </svg>
+        </div>
+        <span class="text-xs font-medium">Admin</span>
+      </a>
+      <a href="/stats" class={`flex flex-col items-center ${Astro.url.pathname === '/stats' ? 'text-amber' : 'text-white/70 hover:text-amber'} transition-colors`}>
+        <div class="w-6 h-6 mb-1">
+          <svg fill="currentColor" viewBox="0 0 24 24">
+            <path d="M3 3v18h18v-2H5V3H3zm4 14h2V9H7v8zm4 0h2V7h-2v10zm4 0h2v-4h-2v4z"/>
+          </svg>
+        </div>
+        <span class="text-xs font-medium">Stats</span>
+      </a>
+    </div>
+  </nav>
+</body>
+</html>

@@ -1,0 +1,13 @@
+---
+interface Props {
+  class?: string;
+  dark?: boolean;
+}
+
+const { class: className = '', dark = false } = Astro.props;
+const glassClass = dark ? 'glass-dark' : 'glass';
+---
+
+<div class={`${glassClass} rounded-2xl p-6 ${className}`}>
+  <slot />
+</div>

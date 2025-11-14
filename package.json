@@ -1,0 +1,22 @@
+{
+  "name": "pub-golf-app",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Production-ready Pub Golf tournament scoring application with real-time updates",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/vercel": "^9.0.0",
+    "@supabase/supabase-js": "^2.81.1",
+    "astro": "^5.15.7"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
