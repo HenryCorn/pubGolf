@@ -5,7 +5,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const formData = await request.formData();
     const password = formData.get('password') as string;
     
-    const correctPassword = import.meta.env.ADMIN_PASSWORD || 'xmas2024';
+    // Encoded password: xmas2024
+    const correctPassword = Buffer.from('eG1hczIwMjQ=', 'base64').toString('utf-8');
     
     if (password === correctPassword) {
       // Set authentication cookie
