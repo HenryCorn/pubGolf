@@ -1,0 +1,6 @@
+{
+  "buildCommand": "cd pub-golf-app && npm run build",
+  "outputDirectory": "pub-golf-app/dist",
+  "installCommand": "cd pub-golf-app && npm install",
+  "framework": "astro"
+}
