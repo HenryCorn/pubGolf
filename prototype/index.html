@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pub Golf VOL.4 - THE XMAS ONE | Live Leaderboard</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Core Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'forest': '#1B4332',
+                        'amber': '#F77F00',
+                        'gold': '#FFD700',
+                        'cream': '#FEFAE0',
+                        'charcoal': '#2D3748'
+                    },
+                    fontFamily: {
+                        'display': ['Playfair Display', 'serif'],
+                        'body': ['Inter', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .glass-dark {
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #1B4332 0%, #2D5A3D 50%, #1B4332 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .aurora {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, 
+                rgba(247, 127, 0, 0.1) 0%, 
+                rgba(255, 215, 0, 0.1) 25%, 
+                rgba(247, 127, 0, 0.1) 50%, 
+                rgba(255, 215, 0, 0.1) 75%, 
+                rgba(247, 127, 0, 0.1) 100%);
+            animation: aurora 8s ease-in-out infinite;
+        }
+        
+        @keyframes aurora {
+            0%, 100% { transform: translateX(-50px) rotate(0deg); }
+            50% { transform: translateX(50px) rotate(2deg); }
+        }
+        
+        .floating-ball {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        
+        .score-card {
+            transition: all 0.3s ease;
+        }
+        
+        .score-card:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .pub-filter.active {
+            background: rgba(247, 127, 0, 0.2);
+            border-color: #F77F00;
+        }
+        
+        .chart-container {
+            min-height: 400px;
+        }
+        
+        .hero-title {
+            background: linear-gradient(135deg, #FFD700, #F77F00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .live-indicator {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="bg-cream text-charcoal font-body">
+    <!-- Navigation -->
+    <nav class="fixed bottom-0 left-0 right-0 glass-dark z-50">
+        <div class="flex justify-around items-center py-3 px-4">
+            <a href="index.html" class="flex flex-col items-center text-amber">
+                <div class="w-6 h-6 mb-1">
+                    <svg fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 13h2v8H3zm4-6h2v14H7zm4-6h2v20h-2zm4 2h2v18h-2zm4 5h2v13h-2z"/>
+                    </svg>
+                </div>
+                <span class="text-xs font-medium">Leaderboard</span>
+            </a>
+            <a href="admin.html" class="flex flex-col items-center text-white/70 hover:text-amber transition-colors">
+                <div class="w-6 h-6 mb-1">
+                    <svg fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 1L9 9l-8 .5a1 1 0 0 0-.5 1.7l6 5.5-2 8.5a1 1 0 0 0 1.5 1.1L12 21l5.5 3.6a1 1 0 0 0 1.5-1.1l-2-8.5 6-5.5a1 1 0 0 0-.5-1.7l-8-.5L12 1z"/>
+                    </svg>
+                </div>
+                <span class="text-xs font-medium">Admin</span>
+            </a>
+            <a href="stats.html" class="flex flex-col items-center text-white/70 hover:text-amber transition-colors">
+                <div class="w-6 h-6 mb-1">
+                    <svg fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 3v18h18v-2H5V3H3zm4 14h2V9H7v8zm4 0h2V7h-2v10zm4 0h2v-4h-2v4z"/>
+                    </svg>
+                </div>
+                <span class="text-xs font-medium">Stats</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="gradient-bg min-h-screen flex items-center justify-center relative">
+        <div class="aurora"></div>
+        
+        <!-- Floating Golf Balls -->
+        <div class="floating-ball" style="top: 20%; left: 10%; animation-delay: 0s;"></div>
+        <div class="floating-ball" style="top: 60%; left: 80%; animation-delay: 2s;"></div>
+        <div class="floating-ball" style="top: 30%; left: 70%; animation-delay: 4s;"></div>
+        
+        <div class="container mx-auto px-4 text-center relative z-10">
+            <div class="glass rounded-3xl p-8 max-w-4xl mx-auto">
+                <img src="resources/tournament-logo.png" alt="Pub Golf VOL.4 Logo" class="w-32 h-32 mx-auto mb-6 rounded-full">
+                
+                <h1 class="font-display text-4xl md:text-6xl font-bold hero-title mb-4">
+                    PUB GOLF VOL.4
+                </h1>
+                <h2 class="font-display text-2xl md:text-3xl text-amber mb-6">
+                    THE XMAS ONE
+                </h2>
+                
+                <div class="flex items-center justify-center mb-6">
+                    <div class="live-indicator w-3 h-3 bg-red-500 rounded-full mr-3"></div>
+                    <span class="text-lg font-medium">Live Tournament in Progress</span>
+                </div>
+                
+                <p class="text-lg text-white/80 max-w-2xl mx-auto leading-relaxed">
+                    Follow the festive tournament as golfers navigate 9 pubs with Christmas-themed challenges. 
+                    Real-time scoring, live updates, and interactive charts bring the competition to life.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 pb-24">
+        <!-- Tournament Progress -->
+        <section class="mb-8">
+            <div class="glass rounded-2xl p-6">
+                <h3 class="font-display text-2xl font-bold mb-4 text-center">Tournament Progress</h3>
+                <div class="flex items-center justify-between mb-4">
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-amber rounded-full flex items-center justify-center text-white font-bold mb-2">1</div>
+                        <span class="text-sm">Lamb & Flag</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2 relative">
+                        <div class="absolute top-0 left-0 h-full bg-amber w-1/3 rounded-full"></div>
+                    </div>
+                    <div class="text-center opacity-50">
+                        <div class="w-12 h-12 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold mb-2">9</div>
+                        <span class="text-sm">St Aldates Tavern</span>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <span class="text-lg font-semibold text-amber">Currently at: Lamb & Flag</span>
+                    <p class="text-sm text-gray-600 mt-1">Secret Santa Challenge - Pint of Cider/Beer</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pub Filters -->
+        <section class="mb-8">
+            <div class="flex flex-wrap gap-3 justify-center">
+                <button class="pub-filter active px-6 py-3 rounded-full glass text-sm font-medium transition-all" data-pub="all">
+                    All Pubs
+                </button>
+                <button class="pub-filter px-6 py-3 rounded-full glass text-sm font-medium transition-all" data-pub="lamb-flag">
+                    Lamb & Flag
+                </button>
+                <button class="pub-filter px-6 py-3 rounded-full glass text-sm font-medium transition-all" data-pub="kings-arms">
+                    Kings Arms
+                </button>
+                <button class="pub-filter px-6 py-3 rounded-full glass text-sm font-medium transition-all" data-pub="wig-pen">
+                    Wig & Pen
+                </button>
+                <button class="pub-filter px-6 py-3 rounded-full glass text-sm font-medium transition-all" data-pub="crown">
+                    The Crown
+                </button>
+            </div>
+        </section>
+
+        <!-- Leaderboard -->
+        <section class="mb-8">
+            <div class="glass rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="font-display text-2xl font-bold">Live Leaderboard</h3>
+                    <div class="flex items-center text-sm text-gray-600">
+                        <div class="live-indicator w-2 h-2 bg-red-500 rounded-full mr-2"></div>
+                        Auto-updating
+                    </div>
+                </div>
+                
+                <div id="leaderboard" class="space-y-4">
+                    <!-- Leaderboard items will be populated by JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Score Charts -->
+        <section class="mb-8">
+            <div class="glass rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="font-display text-2xl font-bold">Performance Analytics</h3>
+                    <div class="flex gap-2">
+                        <button id="bar-chart-btn" class="px-4 py-2 rounded-lg bg-amber text-white text-sm font-medium transition-all">
+                            Bar Chart
+                        </button>
+                        <button id="line-chart-btn" class="px-4 py-2 rounded-lg glass text-sm font-medium transition-all">
+                            Line Chart
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="chart-container" class="chart-container glass rounded-xl p-4">
+                    <!-- Chart will be rendered here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Tournament Rules -->
+        <section class="mb-8">
+            <div class="glass rounded-2xl p-6">
+                <h3 class="font-display text-2xl font-bold mb-4">Tournament Rules</h3>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-semibold text-amber mb-2">Basic Rules</h4>
+                        <ul class="text-sm space-y-1 text-gray-700">
+                            <li>• Say thanks when served (+1 penalty if not)</li>
+                            <li>• Don't spill your drink (+1 penalty/spill)</li>
+                            <li>• Don't get tagged (first 3 pubs) - 1 shot</li>
+                            <li>• Don't trip (+1 penalty)</li>
+                            <li>• Remember golfer names (+1 penalty if not)</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-amber mb-2">Scoring System</h4>
+                        <ul class="text-sm space-y-1 text-gray-700">
+                            <li>• Sips count as strokes</li>
+                            <li>• Par varies by drink difficulty</li>
+                            <li>• Bonuses for challenge winners</li>
+                            <li>• Penalties for rule violations</li>
+                            <li>• Lowest total score wins</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Player Detail Modal -->
+    <div id="player-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="glass rounded-2xl p-6 max-w-md w-full">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 id="modal-player-name" class="font-display text-xl font-bold"></h3>
+                    <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="modal-content">
+                    <!-- Modal content will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

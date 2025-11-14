@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Pub Golf VOL.4</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Core Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'forest': '#1B4332',
+                        'amber': '#F77F00',
+                        'gold': '#FFD700',
+                        'cream': '#FEFAE0',
+                        'charcoal': '#2D3748'
+                    },
+                    fontFamily: {
+                        'display': ['Playfair Display', 'serif'],
+                        'body': ['Inter', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .glass-dark {
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .admin-card {
+            transition: all 0.3s ease;
+        }
+        
+        .admin-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .form-input {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .form-input:focus {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #F77F00;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(247, 127, 0, 0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #F77F00, #FFD700);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(247, 127, 0, 0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        .password-modal {
+            backdrop-filter: blur(20px);
+        }
+        
+        .quick-score-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .quick-score-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .quick-score-btn.active {
+            background: #F77F00;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-forest to-green-800 text-white font-body min-h-screen">
+    <!-- Navigation -->
+    <nav class="fixed bottom-0 left-0 right-0 glass-dark z-50">
+        <div class="flex justify-around items-center py-3 px-4">
+            <a href="index.html" class="flex flex-col items-center text-white/70 hover:text-amber transition-colors">
+                <div class="w-6 h-6 mb-1">
+                    <svg fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 13h2v8H3zm4-6h2v14H7zm4-6h2v20h-2zm4 2h2v18h-2zm4 5h2v13h-2z"/>
+                    </svg>
+                </div>
+                <span class="text-xs font-medium">Leaderboard</span>
+            </a>
+            <a href="admin.html" class="flex flex-col items-center text-amber">
+                <div class="w-6 h-6 mb-1">
+                    <svg fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 1L9 9l-8 .5a1 1 0 0 0-.5 1.7l6 5.5-2 8.5a1 1 0 0 0 1.5 1.1L12 21l5.5 3.6a1 1 0 0 0 1.5-1.1l-2-8.5 6-5.5a1 1 0 0 0-.5-1.7l-8-.5L12 1z"/>
+                    </svg>
+                </div>
+                <span class="text-xs font-medium">Admin</span>
+            </a>
+            <a href="stats.html" class="flex flex-col items-center text-white/70 hover:text-amber transition-colors">
+                <div class="w-6 h-6 mb-1">
+                    <svg fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 3v18h18v-2H5V3H3zm4 14h2V9H7v8zm4 0h2V7h-2v10zm4 0h2v-4h-2v4z"/>
+                    </svg>
+                </div>
+                <span class="text-xs font-medium">Stats</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Password Protection Modal -->
+    <div id="password-modal" class="fixed inset-0 password-modal bg-black/50 z-50 flex items-center justify-center">
+        <div class="glass rounded-2xl p-8 max-w-md w-full mx-4">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-amber rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 1L9 9l-8 .5a1 1 0 0 0-.5 1.7l6 5.5-2 8.5a1 1 0 0 0 1.5 1.1L12 21l5.5 3.6a1 1 0 0 0 1.5-1.1l-2-8.5 6-5.5a1 1 0 0 0-.5-1.7l-8-.5L12 1z"/>
+                    </svg>
+                </div>
+                <h2 class="font-display text-2xl font-bold mb-2">Referee Access</h2>
+                <p class="text-gray-300 text-sm">Enter the tournament password to access the admin dashboard</p>
+            </div>
+            
+            <form id="password-form" class="space-y-4">
+                <div>
+                    <input 
+                        type="password" 
+                        id="password-input" 
+                        placeholder="Enter password..." 
+                        class="form-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400"
+                        required
+                    >
+                </div>
+                <button 
+                    type="submit" 
+                    class="btn-primary w-full py-3 rounded-lg font-semibold text-white"
+                >
+                    Access Dashboard
+                </button>
+            </form>
+            
+            <div id="password-error" class="mt-4 text-red-400 text-sm text-center hidden">
+                Incorrect password. Please try again.
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 pb-24">
+        <!-- Header -->
+        <section class="mb-8">
+            <div class="glass rounded-2xl p-6 text-center">
+                <h1 class="font-display text-3xl font-bold mb-2">Referee Dashboard</h1>
+                <p class="text-gray-300">Manage players, enter scores, and monitor the tournament in real-time</p>
+                <div class="flex items-center justify-center mt-4">
+                    <div class="live-indicator w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                    <span class="text-sm">Live Updates Active</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Current Pub Status -->
+        <section class="mb-8">
+            <div class="glass rounded-2xl p-6">
+                <h2 class="font-display text-2xl font-bold mb-4">Current Tournament Status</h2>
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-amber mb-1">3</div>
+                        <div class="text-sm text-gray-300">Current Hole</div>
+                        <div class="text-xs text-gray-400">Wig & Pen</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-amber mb-1">6</div>
+                        <div class="text-sm text-gray-300">Active Players</div>
+                        <div class="text-xs text-gray-400">All accounted for</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-amber mb-1">Live</div>
+                        <div class="text-sm text-gray-300">Score Entry</div>
+                        <div class="text-xs text-gray-400">Spotify Wrapped Challenge</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Score Entry -->
+        <section class="mb-8">
+            <div class="glass rounded-2xl p-6">
+                <h2 class="font-display text-2xl font-bold mb-6">Score Entry - Wig & Pen</h2>
+                
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- Player Selection -->
+                    <div>
+                        <h3 class="font-semibold mb-4">Select Player</h3>
+                        <div id="player-list" class="space-y-2 max-h-64 overflow-y-auto">
+                            <!-- Player list will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Score Input -->
+                    <div>
+                        <h3 class="font-semibold mb-4">Enter Scores</h3>
+                        <div id="score-form" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Sips Taken</label>
+                                <div class="grid grid-cols-5 gap-2">
+                                    <button class="quick-score-btn glass rounded-lg py-2 text-sm font-medium" data-type="sips" data-value="1">1</button>
+                                    <button class="quick-score-btn glass rounded-lg py-2 text-sm font-medium" data-type="sips" data-value="2">2</button>
+                                    <button class="quick-score-btn glass rounded-lg py-2 text-sm font-medium" data-type="sips" data-value="3">3</button>
+                                    <button class="quick-score-btn glass rounded-lg py-2 text-sm font-medium" data-type="sips" data-value="4">4</button>
+                                    <button class="quick-score-btn glass rounded-lg py-2 text-sm font-medium" data-type="sips" data-value="5">5+</button>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Penalties</label>
+                                <div class="grid grid-cols-4 gap-2">
+                                    <button class="quick-score-btn glass rounded-lg py-2 text-sm font-medium" data-type="penalties" data-value="0">0</button>
+                                    <button class="quick-score-btn glass rounded-lg py-2 text-sm font-medium" data-type="penalties" data-value="1">+1</button>
+                                    <button class="quick-score-btn glass rounded-lg py-2 text-sm font-medium" data-type="penalties" data-value="2">+2</button>
+                                    <button class="quick-score-btn glass rounded-lg py-2 text-sm font-medium" data-type="penalties" data-value="3">+3</button>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Bonuses</label>
+                                <div class="grid grid-cols-4 gap-2">
+                                    <button class="quick-score-btn glass rounded-lg py-2 text-sm font-medium" data-type="bonuses" data-value="0">0</button>
+                                    <button class="quick-score-btn glass rounded-lg py-2 text-sm font-medium" data-type="bonuses" data-value="1">-1</button>
+                                    <button class="quick-score-btn glass rounded-lg py-2 text-sm font-medium" data-type="bonuses" data-value="2">-2</button>
+                                    <button class="quick-score-btn glass rounded-lg py-2 text-sm font-medium" data-type="bonuses" data-value="3">-3</button>
+                                </div>
+                            </div>
+                            
+                            <div class="pt-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-medium">Current Score:</span>
+                                    <span id="current-score" class="font-bold text-amber text-lg">0</span>
+                                </div>
+                                <button id="submit-score" class="btn-primary w-full py-3 rounded-lg font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                    Submit Score
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Player Management -->
+        <section class="mb-8">
+            <div class="glass rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="font-display text-2xl font-bold">Player Management</h2>
+                    <button id="add-player-btn" class="btn-primary px-6 py-2 rounded-lg font-semibold text-white">
+                        Add Player
+                    </button>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-white/20">
+                                <th class="text-left py-3 px-4">Player</th>
+                                <th class="text-left py-3 px-4">Total Score</th>
+                                <th class="text-left py-3 px-4">Holes Played</th>
+                                <th class="text-left py-3 px-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="player-table">
+                            <!-- Player rows will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Live Preview -->
+        <section class="mb-8">
+            <div class="glass rounded-2xl p-6">
+                <h2 class="font-display text-2xl font-bold mb-6">Live Leaderboard Preview</h2>
+                <div id="live-leaderboard" class="space-y-3">
+                    <!-- Live leaderboard will be populated by JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Export & Settings -->
+        <section class="mb-8">
+            <div class="glass rounded-2xl p-6">
+                <h2 class="font-display text-2xl font-bold mb-6">Tournament Management</h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-semibold mb-4">Export Data</h3>
+                        <div class="space-y-3">
+                            <button id="export-results" class="btn-secondary w-full py-3 rounded-lg font-medium text-left px-4">
+                                📊 Export Tournament Results
+                            </button>
+                            <button id="export-scores" class="btn-secondary w-full py-3 rounded-lg font-medium text-left px-4">
+                                📋 Export Detailed Scores
+                            </button>
+                            <button id="export-summary" class="btn-secondary w-full py-3 rounded-lg font-medium text-left px-4">
+                                📄 Export Tournament Summary
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold mb-4">Tournament Settings</h3>
+                        <div class="space-y-3">
+                            <button id="reset-tournament" class="btn-secondary w-full py-3 rounded-lg font-medium text-left px-4 text-red-400">
+                                🔄 Reset Tournament
+                            </button>
+                            <button id="end-tournament" class="btn-secondary w-full py-3 rounded-lg font-medium text-left px-4 text-red-400">
+                                🏆 End Tournament
+                            </button>
+                            <button id="change-password" class="btn-secondary w-full py-3 rounded-lg font-medium text-left px-4">
+                                🔑 Change Password
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Add Player Modal -->
+    <div id="add-player-modal" class="fixed inset-0 password-modal bg-black/50 z-50 hidden flex items-center justify-center">
+        <div class="glass rounded-2xl p-6 max-w-md w-full mx-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-display text-xl font-bold">Add New Player</h3>
+                <button id="close-add-player" class="text-gray-400 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="add-player-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Player Name</label>
+                    <input 
+                        type="text" 
+                        id="new-player-name" 
+                        placeholder="Enter player name..." 
+                        class="form-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400"
+                        required
+                    >
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Avatar Emoji</label>
+                    <input 
+                        type="text" 
+                        id="new-player-avatar" 
+                        placeholder="👨‍🎓" 
+                        class="form-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400"
+                        maxlength="2"
+                    >
+                </div>
+                <button 
+                    type="submit" 
+                    class="btn-primary w-full py-3 rounded-lg font-semibold text-white"
+                >
+                    Add Player
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Admin-specific functionality
+        let selectedPlayer = null;
+        let currentScores = { sips: 0, penalties: 0, bonuses: 0 };
+        
+        // Password protection
+        const CORRECT_PASSWORD = 'xmas2024';
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeAdmin();
+        });
+        
+        function initializeAdmin() {
+            // Password form handling
+            document.getElementById('password-form').addEventListener('submit', handlePasswordSubmit);
+            
+            // Initialize admin features
+            if (window.tournamentData) {
+                renderPlayerList();
+                renderPlayerTable();
+                renderLiveLeaderboard();
+                initializeScoreForm();
+                initializeAddPlayerModal();
+                initializeExportButtons();
+                initializeTournamentButtons();
+            }
+        }
+        
+        function handlePasswordSubmit(e) {
+            e.preventDefault();
+            const password = document.getElementById('password-input').value;
+            
+            if (password === CORRECT_PASSWORD) {
+                // Hide password modal
+                anime({
+                    targets: '#password-modal',
+                    opacity: [1, 0],
+                    duration: 400,
+                    easing: 'easeInQuart',
+                    complete: () => {
+                        document.getElementById('password-modal').style.display = 'none';
+                    }
+                });
+                
+                // Initialize admin dashboard
+                initializeAdminDashboard();
+            } else {
+                // Show error
+                document.getElementById('password-error').classList.remove('hidden');
+                anime({
+                    targets: '#password-error',
+                    scale: [0.8, 1],
+                    duration: 300,
+                    easing: 'easeOutQuart'
+                });
+            }
+        }
+        
+        function initializeAdminDashboard() {
+            // Load main.js functionality
+            if (typeof window.renderLeaderboard === 'function') {
+                renderPlayerList();
+                renderPlayerTable();
+                renderLiveLeaderboard();
+            }
+        }
+        
+        function renderPlayerList() {
+            const playerList = document.getElementById('player-list');
+            if (!playerList || !window.tournamentData) return;
+            
+            playerList.innerHTML = window.tournamentData.players.map(player => `
+                <div class="player-select-item glass rounded-lg p-3 cursor-pointer transition-all" data-player-id="${player.id}">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-2xl">${player.avatar}</span>
+                        <div>
+                            <div class="font-semibold">${player.name}</div>
+                            <div class="text-sm text-gray-300">Score: ${player.totalScore}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Add click handlers
+            document.querySelectorAll('.player-select-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    // Remove active class from all items
+                    document.querySelectorAll('.player-select-item').forEach(i => i.classList.remove('active', 'border-amber'));
+                    
+                    // Add active class to clicked item
+                    this.classList.add('active', 'border-amber');
+                    
+                    // Set selected player
+                    selectedPlayer = parseInt(this.dataset.playerId);
+                    
+                    // Enable score form
+                    document.getElementById('submit-score').disabled = false;
+                });
+            });
+        }
+        
+        function renderPlayerTable() {
+            const playerTable = document.getElementById('player-table');
+            if (!playerTable || !window.tournamentData) return;
+            
+            const sortedPlayers = [...window.tournamentData.players].sort((a, b) => a.totalScore - b.totalScore);
+            
+            playerTable.innerHTML = sortedPlayers.map((player, index) => `
+                <tr class="border-b border-white/10 hover:bg-white/5 transition-colors">
+                    <td class="py-3 px-4">
+                        <div class="flex items-center space-x-3">
+                            <span class="text-lg">${player.avatar}</span>
+                            <div>
+                                <div class="font-semibold">${player.name}</div>
+                                <div class="text-xs text-gray-400">#${player.id}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="font-bold ${player.totalScore < 10 ? 'text-green-400' : player.totalScore < 20 ? 'text-amber' : 'text-red-400'}">
+                            ${player.totalScore}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4">
+                        ${Object.keys(player.scores).length}/9
+                    </td>
+                    <td class="py-3 px-4">
+                        <button class="text-red-400 hover:text-red-300 text-sm" onclick="removePlayer(${player.id})">
+                            Remove
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        function renderLiveLeaderboard() {
+            const liveLeaderboard = document.getElementById('live-leaderboard');
+            if (!liveLeaderboard || !window.tournamentData) return;
+            
+            const sortedPlayers = [...window.tournamentData.players].sort((a, b) => a.totalScore - b.totalScore);
+            
+            liveLeaderboard.innerHTML = sortedPlayers.map((player, index) => {
+                const position = index + 1;
+                const positionClass = position <= 3 ? 'text-amber' : 'text-gray-400';
+                
+                return `
+                    <div class="admin-card glass rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <div class="text-xl font-bold ${positionClass} w-6">
+                                    ${position}
+                                </div>
+                                <span class="text-xl">${player.avatar}</span>
+                                <div>
+                                    <div class="font-semibold">${player.name}</div>
+                                    <div class="text-xs text-gray-400">${Object.keys(player.scores).length} holes completed</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-lg font-bold text-amber">${player.totalScore}</div>
+                                <div class="text-xs text-gray-400">total score</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function initializeScoreForm() {
+            // Quick score buttons
+            document.querySelectorAll('.quick-score-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const type = this.dataset.type;
+                    const value = parseInt(this.dataset.value);
+                    
+                    // Remove active class from siblings
+                    this.parentElement.querySelectorAll('.quick-score-btn').forEach(b => b.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    
+                    // Update current scores
+                    currentScores[type] = value;
+                    
+                    // Update display
+                    updateCurrentScore();
+                });
+            });
+            
+            // Submit score
+            document.getElementById('submit-score').addEventListener('click', submitScore);
+        }
+        
+        function updateCurrentScore() {
+            const currentScore = currentScores.sips + currentScores.penalties - currentScores.bonuses;
+            document.getElementById('current-score').textContent = currentScore;
+        }
+        
+        function submitScore() {
+            if (!selectedPlayer || !window.tournamentData) return;
+            
+            const player = window.tournamentData.players.find(p => p.id === selectedPlayer);
+            const currentPub = window.tournamentData.currentPub;
+            
+            // Update player scores
+            player.scores[currentPub] = { ...currentScores };
+            player.scores[currentPub].total = currentScores.sips + currentScores.penalties - currentScores.bonuses;
+            
+            // Recalculate total score
+            player.totalScore = Object.values(player.scores).reduce((sum, score) => sum + score.total, 0);
+            
+            // Reset form
+            resetScoreForm();
+            
+            // Update displays
+            renderPlayerList();
+            renderPlayerTable();
+            renderLiveLeaderboard();
+            
+            // Update main leaderboard if on index page
+            if (typeof window.renderLeaderboard === 'function') {
+                window.renderLeaderboard();
+                window.updateChart();
+            }
+            
+            // Show success notification
+            showNotification(`Score updated for ${player.name}!`, 'success');
+        }
+        
+        function resetScoreForm() {
+            selectedPlayer = null;
+            currentScores = { sips: 0, penalties: 0, bonuses: 0 };
+            
+            // Reset button states
+            document.querySelectorAll('.quick-score-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.player-select-item').forEach(item => item.classList.remove('active', 'border-amber'));
+            
+            // Reset display
+            document.getElementById('current-score').textContent = '0';
+            document.getElementById('submit-score').disabled = true;
+        }
+        
+        function initializeAddPlayerModal() {
+            document.getElementById('add-player-btn').addEventListener('click', showAddPlayerModal);
+            document.getElementById('close-add-player').addEventListener('click', hideAddPlayerModal);
+            document.getElementById('add-player-form').addEventListener('submit', addPlayer);
+        }
+        
+        function showAddPlayerModal() {
+            document.getElementById('add-player-modal').classList.remove('hidden');
+            anime({
+                targets: '#add-player-modal .glass',
+                scale: [0.8, 1],
+                opacity: [0, 1],
+                duration: 400,
+                easing: 'easeOutQuart'
+            });
+        }
+        
+        function hideAddPlayerModal() {
+            anime({
+                targets: '#add-player-modal .glass',
+                scale: [1, 0.8],
+                opacity: [1, 0],
+                duration: 300,
+                easing: 'easeInQuart',
+                complete: () => {
+                    document.getElementById('add-player-modal').classList.add('hidden');
+                }
+            });
+        }
+        
+        function addPlayer(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('new-player-name').value;
+            const avatar = document.getElementById('new-player-avatar').value || '👤';
+            
+            const newPlayer = {
+                id: Math.max(...window.tournamentData.players.map(p => p.id)) + 1,
+                name: name,
+                avatar: avatar,
+                scores: {},
+                totalScore: 0
+            };
+            
+            window.tournamentData.players.push(newPlayer);
+            
+            // Reset form
+            document.getElementById('add-player-form').reset();
+            hideAddPlayerModal();
+            
+            // Update displays
+            renderPlayerList();
+            renderPlayerTable();
+            renderLiveLeaderboard();
+            
+            showNotification(`Player ${name} added successfully!`, 'success');
+        }
+        
+        function removePlayer(playerId) {
+            if (confirm('Are you sure you want to remove this player?')) {
+                window.tournamentData.players = window.tournamentData.players.filter(p => p.id !== playerId);
+                
+                // Update displays
+                renderPlayerList();
+                renderPlayerTable();
+                renderLiveLeaderboard();
+                
+                showNotification('Player removed successfully!', 'success');
+            }
+        }
+        
+        function initializeExportButtons() {
+            document.getElementById('export-results').addEventListener('click', () => exportData('results'));
+            document.getElementById('export-scores').addEventListener('click', () => exportData('scores'));
+            document.getElementById('export-summary').addEventListener('click', () => exportData('summary'));
+        }
+        
+        function initializeTournamentButtons() {
+            document.getElementById('reset-tournament').addEventListener('click', resetTournament);
+            document.getElementById('end-tournament').addEventListener('click', endTournament);
+            document.getElementById('change-password').addEventListener('click', changePassword);
+        }
+        
+        function exportData(type) {
+            // Simulate export functionality
+            showNotification(`Exporting ${type}... (Feature coming soon!)`, 'info');
+        }
+        
+        function resetTournament() {
+            if (confirm('Are you sure you want to reset the entire tournament? This cannot be undone.')) {
+                // Reset all player scores
+                window.tournamentData.players.forEach(player => {
+                    player.scores = {};
+                    player.totalScore = 0;
+                });
+                
+                // Update displays
+                renderPlayerList();
+                renderPlayerTable();
+                renderLiveLeaderboard();
+                
+                showNotification('Tournament reset successfully!', 'success');
+            }
+        }
+        
+        function endTournament() {
+            if (confirm('Are you sure you want to end the tournament? This will finalize all scores.')) {
+                showNotification('Tournament ended! Final results have been saved.', 'success');
+            }
+        }
+        
+        function changePassword() {
+            const newPassword = prompt('Enter new password:');
+            if (newPassword && newPassword.length >= 4) {
+                // In a real app, this would be sent to the server
+                showNotification('Password changed successfully!', 'success');
+            } else {
+                showNotification('Password must be at least 4 characters long.', 'error');
+            }
+        }
+        
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+            
+            notification.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg z-50 shadow-lg`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            anime({
+                targets: notification,
+                translateX: [300, 0],
+                opacity: [0, 1],
+                duration: 400,
+                easing: 'easeOutQuart'
+            });
+            
+            setTimeout(() => {
+                anime({
+                    targets: notification,
+                    translateX: [0, 300],
+                    opacity: [1, 0],
+                    duration: 400,
+                    easing: 'easeInQuart',
+                    complete: () => {
+                        document.body.removeChild(notification);
+                    }
+                });
+            }, 3000);
+        }
+    </script>
+    
+    <script src="main.js"></script>
+</body>
+</html>
